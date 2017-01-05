@@ -1,8 +1,7 @@
 #!/usr/bin/python
 
-# from flask import Flask, request, send_from_directory
 import json
-from flask import Flask, request, redirect, url_for, send_from_directory
+from flask import Flask, request
 
 DEBUG = True
 PORT_NUMBER = 8080
@@ -21,27 +20,26 @@ def root():
 
 @app.route('/<path:path>')
 def static_proxy(path):
-  # send_static_file will guess the correct MIME type
   return app.send_static_file(path)
 
 @app.route('/feed', methods=['POST'])
 def feed():
-	global FEEDING
-	content = request.json
+    global FEEDING
+    status = ''
 
-	status = ''
-	print 'Received request to feed', content['portionCount'], 'portions'
-	print 'Current feeding status: {0}'.format(FEEDING)
-	if FEEDING == True:
-		status = 'Already feeding {0} portions, ignoring request'.format(content['portionCount'])
-	else:
-		FEEDING = True
-		status = 'Starting feeding for {0} portions'.format(content['portionCount'])
-	print status
+    content = request.json
+    print 'Current feeding status: {0} - Received request to feed {1} portions'.format(FEEDING, content['portionCount'])
 
-	response = {}
-	response['status'] = status
-	return json.dumps(response)
+    if FEEDING == True:
+        status = 'Already feeding {0} portions, ignoring request'.format(content['portionCount'])
+    else:
+        FEEDING = True
+        status = 'Starting feeding for {0} portions'.format(content['portionCount'])
+    print status
+
+    response = {}
+    response['status'] = status
+    return json.dumps(response)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=PORT_NUMBER)
