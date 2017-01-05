@@ -15,7 +15,7 @@
     systemctl disable hciuart
     ```
 
-3. Login with screen ([need TTL cable drivers|https://learn.adafruit.com/adafruits-raspberry-pi-lesson-5-using-a-console-cable/software-installation-mac)
+3. Login with screen ([need TTL cable drivers](https://learn.adafruit.com/adafruits-raspberry-pi-lesson-5-using-a-console-cable/software-installation-mac))
     ```
     sudo screen /dev/cu.usbserial 115200
     ```
