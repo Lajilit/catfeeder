@@ -1,6 +1,8 @@
 # catfeeder
 
-## OS Setup on the Pi
+## Raspberry PI Setup
+
+### Install Linux
 
 1. Pi to SD card fast xfer using unbuffered disk (rdisk)
     ```
@@ -32,7 +34,19 @@
         psk="Your_wifi_password"
     }
     ```
-    then reboot.
+
+    Then reboot.
+
+### mDNS Support
+
+```
+sudo apt-get install avahi-daemon
+echo "catfeeder" | sudo tee /etc/hostname
+```
+
+Then reboot.
+
+Now the Pi should respond to [catfeeder.local](http://catfeeder.local)
 
 ## Servo Setup w/software GPIO
 
@@ -92,7 +106,7 @@ while True:
 sudo pip install Flask
 ```
 
-Run the app
+Run the app, viewable on http://catfeeder.local:8080
 
 ```
 python catfeeder.py
