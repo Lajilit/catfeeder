@@ -69,35 +69,16 @@ sudo pip install wiringpi
 
 [Command line test](https://learn.adafruit.com/adafruits-raspberry-pi-lesson-8-using-a-servo-motor?view=all#software) with wiringpi
 
-Test app with wiringpi:
+Test app from python REPL:
 
 ```python
-# Servo Control
-import time
-import wiringpi
-
-# use 'GPIO naming'
-wiringpi.wiringPiSetupGpio()
-
-# set #18 to be a PWM output
-wiringpi.pinMode(18, wiringpi.GPIO.PWM_OUTPUT)
-
-# set the PWM mode to milliseconds stype
-wiringpi.pwmSetMode(wiringpi.GPIO.PWM_MODE_MS)
-
-# divide down clock
-wiringpi.pwmSetClock(192)
-wiringpi.pwmSetRange(2000)
-
-delay_period = 0.01
-
-while True:
-        for pulse in range(50, 250, 1):
-                wiringpi.pwmWrite(18, pulse)
-                time.sleep(delay_period)
-        for pulse in range(250, 50, -1):
-                wiringpi.pwmWrite(18, pulse)
-                time.sleep(delay_period)
+import RPi.GPIO as GPIO
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(11,GPIO.OUT)
+pwm=GPIO.PWM(11,50)
+pwm.start(5)
+sleep(2)
+pwm.stop()
 ```
 
 ## App setup
@@ -110,4 +91,12 @@ Run the app, viewable on http://catfeeder.local:8080
 
 ```
 python catfeeder.py
+```
+
+### Run on startup
+
+Copy `catfeeder` into `/etc/init.d`, then run:
+
+```
+sudo update-rc.d catfeeder defaults
 ```
