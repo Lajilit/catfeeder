@@ -1,5 +1,6 @@
 import json
 import logging
+from logging.handlers import RotatingFileHandler
 import time
 from multiprocessing import Process, Value, Lock
 from flask import Flask, request
@@ -100,10 +101,6 @@ def static_proxy(path):
 @app.route("/feed", methods=["POST"])
 def postFeed():
     global logger
-    global PWM
-    global FEEDER_PWM_DUTY_CYCLE
-    global FEEDER_PORTION_TIME_MS
-
     status = ""
     content = request.json
 
@@ -125,34 +122,10 @@ def postFeed():
 
 
 if __name__ == "__main__":
-    # # create file handler which logs even debug messages
-    # fh = logging.FileHandler("catfeeder.log")
-    # fh.setLevel(logging.DEBUG)
-    #
-    # # create console handler with a higher log level
-    # ch = logging.StreamHandler()
-    # ch.setLevel(logging.INFO)
-    #
-    # # create formatter and add it to the handlers
-    # # formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    # # fh.setFormatter(formatter)
-    # # ch.setFormatter(formatter)
-    #
-    # # add the handlers to the logger
-    # logger.addHandler(fh)
-    # logger.addHandler(ch)
-    #
-    #
-    # # handler = RotatingFileHandler("catfeeder.log", maxBytes=10000, backupCount=1)
-    # # handler.setLevel(logging.DEBUG)
-    # # app.logger.addHandler(handler)
-    # # logger.addHandler(ch)
-    # #
-    # #
-    # # log = logging.getLogger("werkzeug")
-    # # log.setLevel(logging.DEBUG)
-    # # log.addHandler(handler)
-
+    # rotating file handler which logs debug messages
+    fh = RotatingFileHandler("catfeeder.log", maxBytes=10000, backupCount=1)
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
 
     logger.info("Catfeeder starting")
     setupGPIO()
