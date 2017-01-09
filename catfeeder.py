@@ -27,7 +27,7 @@ app.info = True  # enable debug mode
 feedingState = Value('b', False)
 lock = Lock()
 
-# globals
+# global values
 PWM = 0
 
 
