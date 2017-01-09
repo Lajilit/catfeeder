@@ -15,6 +15,13 @@ $.fn.serializeObject = function()
     return o;
 };
 
+var formatTimestamp = function(stamp) {
+  var ts = moment.utc(stamp);
+  ts = moment(ts.toISOString())
+  var ago = ts.fromNow();
+  return ago;
+}
+
 $(function(){
   var lastFed = $('#lastFed');
 
@@ -24,7 +31,7 @@ $(function(){
       contentType: 'application/json; charset=utf-8',
       dataType: 'json',
       success: function (response) {
-          lastFed.html(response.lastFed)
+          lastFed.html(formatTimestamp(response.lastFed))
       },
       error: function (response) {
           console.error(response.status, response.responseText);
@@ -48,7 +55,7 @@ $(function(){
             success: function (response) {
                 statusText.removeClass('danger');
                 statusText.html(response.status);
-                lastFed.html(response.lastFed)
+                lastFed.html(formatTimestamp(response.lastFed))
                 submitButton.prop('disabled', false);
             },
             error: function (response) {

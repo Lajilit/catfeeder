@@ -81,7 +81,7 @@ def feed(portionCount=DEFAULT_PORTION_COUNT):
             PWM.stop()
             feedingState.value = False
             logger.debug("Servo stopped")
-            writeAppState(lastFed=datetime.datetime.now())
+            writeAppState(lastFed=datetime.datetime.utcnow())
     else:
         logger.debug("Ignoring request to feed, feeding in progress")
 
