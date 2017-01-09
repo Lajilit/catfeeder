@@ -1,93 +1,132 @@
-#!/usr/bin/python
-
 import json
 import logging
 import time
-import RPi.GPIO as GPIO
+from multiprocessing import Process, Value, Lock
 from flask import Flask, request
-
-DEBUG = True
-PORT_NUMBER = 80
-PWM = 0
-FEEDING = False # True if the Servo is running
+import RPi.GPIO as GPIO
 
 # config values
-SERVO_PWM_PHYSICAL_PIN = 11   # Pin 11 is GPIO 18 on RPi3
-SERVO_PWM_FREQUENCY = 50      # PWM Frequency in Hz
-FEEDER_PWM_DUTY_CYCLE = 1     # Duty Cycle to run PMM
-FEEDER_PORTION_TIME_MS = 1000 # ms to run servo for each portion
+PORT_NUMBER = 80               # HTTP Port
+BUTTON_PHYSICAL_PIN = 13       # Pin 13 is GPIO 27 on RPi3
+SERVO_PWM_PHYSICAL_PIN = 11    # Pin 11 is GPIO 18 on RPi3
+SERVO_PWM_FREQUENCY = 50       # PWM Frequency in Hz
+FEEDER_PWM_DUTY_CYCLE = 1      # Duty Cycle to run PMM
+FEEDER_PORTION_TIME_MS = 1000  # ms to run servo for each portion
+DEFAULT_PORTION_COUNT = 1      # default number of portions to feed
 
 # logging setup
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger('catfeeder')
+logger = logging.getLogger("catfeeder")
 
-# Setup Servo PWM
+# flask setup
+app = Flask(__name__, static_url_path="")
+app.info = True  # enable debug mode
 
-def setupServo():
-    global PWM
-    GPIO.setwarnings(False) # ignore warnings if GPIO channel is already in use
-    GPIO.setmode(GPIO.BOARD)
-    GPIO.setup(SERVO_PWM_PHYSICAL_PIN, GPIO.OUT)
-    PWM = GPIO.PWM(SERVO_PWM_PHYSICAL_PIN, SERVO_PWM_FREQUENCY)
+# multiprocessing shared value and lock states across processes
+feedingState = Value('b', False)
+lock = Lock()
 
-# Setup Flask app
+# globals
+PWM = 0
 
-app = Flask(__name__, static_url_path='')
-app.info = DEBUG
 
-# Routes
-
-@app.route('/')
-def root():
-    return app.send_static_file('index.html')
-
-@app.route('/<path:path>')
-def static_proxy(path):
-  return app.send_static_file(path)
-
-@app.route('/feed', methods=['POST'])
-def feed():
+def feed(portionCount=DEFAULT_PORTION_COUNT):
     global logger
-    global PWM
-    global FEEDING
-    global FEEDER_PWM_DUTY_CYCLE
-    global FEEDER_PORTION_TIME_MS
+    global feedingState
+    global lock
 
-    status = ''
-    content = request.json
+    logger.debug("{0} portion feed requested, current feed state: {1}".
+                format(portionCount, feedingState.value))
 
-    logger.info('POST /feed')
-    logger.info('Current feeding status: {0} - Received request to feed {1} portions'.format(FEEDING, content['portionCount']))
+    if feedingState.value == False:
+        durationMs = FEEDER_PORTION_TIME_MS * portionCount
+        logger.debug("Starting servo for {0}ms".format(durationMs))
 
-    if FEEDING == True:
-        status = 'Already feeding {0} portions, ignoring request'.format(content['portionCount'])
-        logger.info(status)
-
-    else:
-        portionCount = int(content['portionCount'])
-        if (portionCount > 2):
-            status = 'Portion count is too high ({0}), ignoring'.format(portionCount)
-        else:
-            durationMs = FEEDER_PORTION_TIME_MS * portionCount
-            logger.debug('Starting servo for {0}ms'.format(durationMs))
-
-            FEEDING = True
+        with lock:
+            feedingState.value = True
             PWM.start(FEEDER_PWM_DUTY_CYCLE)
             time.sleep(durationMs / 1000)
             PWM.stop()
-            FEEDING = False
-            logger.debug('Servo stopped')
+            feedingState.value = False
+            logger.debug("Servo stopped")
+    else:
+        logger.debug("Ignoring request to feed, feeding in progress")
 
-            status = 'Fed {0} portions'.format(content['portionCount'])
-            logger.info(status)
+
+def setupGPIO():
+    GPIO.setwarnings(False)   # ignore warnings if GPIO channel in use
+    GPIO.setmode(GPIO.BOARD)  # use physical pin numbers
+
+
+def setupServo():
+    global PWM
+    global logging
+    global SERVO_PWM_PHYSICAL_PIN
+    GPIO.setup(SERVO_PWM_PHYSICAL_PIN,
+               GPIO.OUT)
+    PWM = GPIO.PWM(SERVO_PWM_PHYSICAL_PIN,
+                   SERVO_PWM_FREQUENCY)
+    logger.info("PWM using physical pin {0} @ {1}Hz "
+                .format(SERVO_PWM_PHYSICAL_PIN, SERVO_PWM_FREQUENCY))
+
+
+def buttonHandler(feedingState, lock):
+    global logging
+    global BUTTON_PHYSICAL_PIN
+
+    GPIO.setup(BUTTON_PHYSICAL_PIN,
+               GPIO.IN,
+               pull_up_down=GPIO.PUD_UP)
+    logger.info("Button using physical pin {0}".format(BUTTON_PHYSICAL_PIN))
+    logger.info("Button handler loop starting")
+    while True:
+        input_state = GPIO.input(BUTTON_PHYSICAL_PIN)
+        if input_state == False:
+            logger.debug("Button press detected")
+            feed()
+        time.sleep(0.2)  # ghetto debounce
+
+
+@app.route("/")
+def root():
+    return app.send_static_file("index.html")
+
+
+@app.route("/<path:path>")
+def static_proxy(path):
+    return app.send_static_file(path)
+
+
+@app.route("/feed", methods=["POST"])
+def postFeed():
+    global logger
+    global PWM
+    global FEEDER_PWM_DUTY_CYCLE
+    global FEEDER_PORTION_TIME_MS
+
+    status = ""
+    content = request.json
+
+    logger.info("POST /feed - received request to feed {0} portions"
+                .format(content["portionCount"]))
+
+    portionCount = int(content["portionCount"])
+    if (portionCount > 2):
+        status = "Portion count is too high ({0}), ignoring\
+        ".format(portionCount)
+    else:
+        feed(portionCount)
+        status = "Fed {0} portions".format(portionCount)
+        logger.info(status)
 
     response = {}
-    response['status'] = status
+    response["status"] = status
     return json.dumps(response)
+
 
 if __name__ == "__main__":
     # # create file handler which logs even debug messages
-    # fh = logging.FileHandler('catfeeder.log')
+    # fh = logging.FileHandler("catfeeder.log")
     # fh.setLevel(logging.DEBUG)
     #
     # # create console handler with a higher log level
@@ -95,7 +134,7 @@ if __name__ == "__main__":
     # ch.setLevel(logging.INFO)
     #
     # # create formatter and add it to the handlers
-    # # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # # formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     # # fh.setFormatter(formatter)
     # # ch.setFormatter(formatter)
     #
@@ -104,16 +143,25 @@ if __name__ == "__main__":
     # logger.addHandler(ch)
     #
     #
-    # # handler = RotatingFileHandler('catfeeder.log', maxBytes=10000, backupCount=1)
+    # # handler = RotatingFileHandler("catfeeder.log", maxBytes=10000, backupCount=1)
     # # handler.setLevel(logging.DEBUG)
     # # app.logger.addHandler(handler)
     # # logger.addHandler(ch)
     # #
     # #
-    # # log = logging.getLogger('werkzeug')
+    # # log = logging.getLogger("werkzeug")
     # # log.setLevel(logging.DEBUG)
     # # log.addHandler(handler)
 
+
+    logger.info("Catfeeder starting")
+    setupGPIO()
     setupServo()
-    logging.info('Catfeeder starting. PWM using physical pin {0} @ {1}Hz '.format(SERVO_PWM_PHYSICAL_PIN, SERVO_PWM_FREQUENCY))
-    app.run(host='0.0.0.0', port=PORT_NUMBER)
+
+    # create button handler process
+    buttonProcess = Process(target=buttonHandler, args=(feedingState, lock))
+    buttonProcess.daemon = True
+    buttonProcess.start()
+
+    # start flask web app
+    app.run(host="0.0.0.0", port=PORT_NUMBER, threaded=True)
