@@ -2,7 +2,7 @@
 
 Operates a cat feeder made with a cereal dispenser, servo and Raspberry Pi3. Food is dispensed with a pushbutton on the feeder or a webpage.
 
-It uses a python app since existing python libraries for GPIO support are pretty solid. Sorry.
+It uses a python app since existing python libraries for GPIO support are pretty solid. (Sorry, Go would have been preferable but too many GPIO shenanigans).
 
 Parts List:
 
@@ -12,11 +12,15 @@ Parts List:
 * [TTL Console Cable](https://www.adafruit.com/product/954)
 * [USB power supply](https://www.amazon.com/gp/product/B00OY7HR1U/ref=oh_aui_detailpage_o03_s00?ie=UTF8&psc=1)
 
+Fritzing Diagram
+
+<img src="catfeeder.png" width="640px" />
+
 ## Raspberry PI Setup
 
 ### Install Linux
 
-All steps done from OSX.
+All steps performed from OSX.
 
 1. [Download raspbian lite](https://downloads.raspberrypi.org/raspbian_lite_latest), do a fast xfer using unbuffered disk (rdisk) to copy it super fast:
     ```
@@ -61,7 +65,7 @@ All steps done from OSX.
 
 Now the Pi should respond to [catfeeder.local](http://catfeeder.local)
 
-## Software Setup
+### Software Setup
 
 On the Raspberry Pi, perform RPi.GPIO installation. Install packages:
 
@@ -83,7 +87,7 @@ sudo pip install RPi.GPIO
 sudo pip install Flask
 ```
 
-## Run the Cat Feeder app
+## Running the Cat Feeder
 
 Run the app, viewable on http://catfeeder.local
 
