@@ -1,7 +1,7 @@
 import json
 import logging
-from logging.handlers import RotatingFileHandler
 import time
+from logging.handlers import RotatingFileHandler
 from multiprocessing import Process, Value, Lock
 from flask import Flask, request
 import RPi.GPIO as GPIO
