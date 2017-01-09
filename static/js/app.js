@@ -16,6 +16,21 @@ $.fn.serializeObject = function()
 };
 
 $(function(){
+  var lastFed = $('#lastFed');
+
+  $.ajax({
+      url: "/lastFed",
+      type: "GET",
+      contentType: 'application/json; charset=utf-8',
+      dataType: 'json',
+      success: function (response) {
+          lastFed.html(response.lastFed)
+      },
+      error: function (response) {
+          console.error(response.status, response.responseText);
+      },
+  });
+
   var $form = $('#feedForm');
   var submitButton = $('#feedSubmit');
   var statusText = $('#feedStatus');
@@ -33,6 +48,7 @@ $(function(){
             success: function (response) {
                 statusText.removeClass('danger');
                 statusText.html(response.status);
+                lastFed.html(response.lastFed)
                 submitButton.prop('disabled', false);
             },
             error: function (response) {

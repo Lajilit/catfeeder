@@ -3,6 +3,8 @@
 import json
 import logging
 import time
+import datetime
+import os.path
 from logging.handlers import RotatingFileHandler
 from multiprocessing import Process, Value, Lock
 from flask import Flask, request
@@ -31,6 +33,33 @@ lock = Lock()
 
 # global values
 PWM = 0
+stateFile = 'feeder_state.json'
+appState = {
+    'lastFed': None
+}
+
+
+def initConfig():
+    global logger
+    global appState
+    global stateFile
+
+    if os.path.isfile(stateFile):
+        logger.debug('Feeder state file found')
+        with open(stateFile) as infile:
+            appState = json.load(infile)
+    else:
+        logger.debug('Creating feeder state file')
+        with open(stateFile, 'w') as outfile:
+            json.dump(appState, outfile)
+
+
+def writeAppState(lastFed):
+    global appState
+    global stateFile
+    appState["lastFed"] = str(lastFed)
+    with open(stateFile, 'w') as outfile:
+        json.dump(appState, outfile)
 
 
 def feed(portionCount=DEFAULT_PORTION_COUNT):
@@ -52,6 +81,7 @@ def feed(portionCount=DEFAULT_PORTION_COUNT):
             PWM.stop()
             feedingState.value = False
             logger.debug("Servo stopped")
+            writeAppState(lastFed=datetime.datetime.now())
     else:
         logger.debug("Ignoring request to feed, feeding in progress")
 
@@ -100,9 +130,22 @@ def static_proxy(path):
     return app.send_static_file(path)
 
 
+@app.route("/lastFed", methods=["GET"])
+def getLastFed():
+    global logger
+    global appState
+
+    logger.info("GET /lastFed")
+
+    response = {}
+    response["lastFed"] = appState["lastFed"]
+    return json.dumps(response)
+
+
 @app.route("/feed", methods=["POST"])
 def postFeed():
     global logger
+    global appState
     status = ""
     content = request.json
 
@@ -120,6 +163,7 @@ def postFeed():
 
     response = {}
     response["status"] = status
+    response["lastFed"] = appState["lastFed"]
     return json.dumps(response)
 
 
@@ -130,6 +174,7 @@ if __name__ == "__main__":
     logger.addHandler(fh)
 
     logger.info("Catfeeder starting")
+    initConfig()
     setupGPIO()
     setupServo()
 
