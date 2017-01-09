@@ -1,5 +1,4 @@
-#!/bin/bash
-# /etc/init.d/catfeeder
+#!/bin/sh
 
 ### BEGIN INIT INFO
 # Provides:          catfeeder
@@ -8,23 +7,69 @@
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Cat Feeder initscript
-# Description:       This service is used to manage a cat feeder
+# Description:       This service is used to manage a cat feeder via GPIO
 ### END INIT INFO
 
+# Change the next 3 lines to suit where you install your script and what you want to call it
+DIR=/home/pi
+DAEMON=$DIR/catfeeder.py
+DAEMON_NAME=catfeeder
+
+# Add any command line options for your daemon here
+DAEMON_OPTS=""
+
+# This next line determines what user the script runs as.
+# Root generally not recommended but necessary if you are using the Raspberry Pi GPIO from Python.
+DAEMON_USER=root
+
+# The process ID of the script when it runs is stored here:
+PIDFILE=/var/run/$DAEMON_NAME.pid
 
 case "$1" in
-    start)
-        echo "Starting catfeeder"
-        /usr/bin/python /home/pi/catfeeder.py
-        ;;
-    stop)
-        echo "Stopping catfeeder"
-        killall catfeeder
-        ;;
-    *)
-        echo "Usage: /etc/init.d/catfeeder start|stop"
-        exit 1
-        ;;
-esac
+start)
+	printf "%-50s" "Starting $DAEMON_NAME..."
+	cd $DIR
+	PID=`$DAEMON $DAEMONOPTS > /dev/null 2>&1 & echo $!`
+	#echo "Saving PID" $PID " to " $PIDFILE
+        if [ -z $PID ]; then
+            printf "%s\n" "Fail"
+        else
+            echo $PID > $PIDFILE
+            printf "%s\n" "Ok"
+        fi
+;;
+status)
+        printf "%-50s" "Checking $DAEMON_NAME..."
+        if [ -f $PIDFILE ]; then
+            PID=`cat $PIDFILE`
+            if [ -z "`ps axf | grep ${PID} | grep -v grep`" ]; then
+                printf "%s\n" "Process dead but pidfile exists"
+            else
+                echo "Running"
+            fi
+        else
+            printf "%s\n" "Service not running"
+        fi
+;;
+stop)
+        printf "%-50s" "Stopping $DAEMON_NAME"
+            PID=`cat $PIDFILE`
+            cd $DIR
+        if [ -f $PIDFILE ]; then
+            kill -HUP $PID
+            printf "%s\n" "Ok"
+            rm -f $PIDFILE
+        else
+            printf "%s\n" "pidfile not found"
+        fi
+;;
 
-exit 0
+restart)
+  	$0 stop
+  	$0 start
+;;
+
+*)
+        echo "Usage: $0 {status|start|stop|restart}"
+        exit 1
+esac
