@@ -17,7 +17,7 @@ SERVO_PWM_PHYSICAL_PIN = 11    # Pin 11 is GPIO 18 on RPi3
 SERVO_PWM_FREQUENCY = 50       # PWM Frequency in Hz
 FEEDER_PWM_DUTY_CYCLE = 1      # Duty Cycle to run PMM
 FEEDER_PORTION_TIME_MS = 1000  # ms to run servo for each portion
-DEFAULT_PORTION_COUNT = 1      # default number of portions to feed
+DEFAULT_PORTION_COUNT = 2      # default number of portions to feed
 
 # logging setup
 logging.basicConfig(level=logging.DEBUG)
