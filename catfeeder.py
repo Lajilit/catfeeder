@@ -34,7 +34,7 @@ BUTTON_PHYSICAL_PIN = 13       # Pin 13 is GPIO 27 on RPi3
 BUTTON_DEBOUNCE_MS = 200       # ms to pause before reading button again
 SERVO_PWM_PHYSICAL_PIN = 11    # Pin 11 is GPIO 18 on RPi3
 SERVO_PWM_FREQUENCY = 50       # PWM Frequency in Hz
-FEEDER_PWM_DUTY_CYCLE = 1      # Duty Cycle to run PMM
+SERVO_PWM_DUTY_CYCLE = 1       # Duty Cycle to run PMM
 FEEDER_PORTION_TIME_MS = 1000  # ms to run servo for each portion
 FEEDER_PORTION_COUNT_MAX = 2   # maximum number of allowed portions
 
@@ -147,7 +147,7 @@ def doServo(feed):
 
         for x in range(0, feed.count()):
             logger.debug('Feeding portion: start')
-            PWM.start(FEEDER_PWM_DUTY_CYCLE)
+            PWM.start(SERVO_PWM_DUTY_CYCLE)
             time.sleep(feed.seconds())
             PWM.stop()
             logger.debug('Feeding portion: stopped')
