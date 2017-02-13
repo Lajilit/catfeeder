@@ -27,7 +27,7 @@ from multiprocessing import Process, Value, Lock
 
 # config values
 SERVER_PORT = 9000
-HTTP_PORT = 8000
+HTTP_PORT = 80
 SOCKET_READ_LENGTH = 1024
 STATE_FILE = 'feeder_state.json'
 BUTTON_PHYSICAL_PIN = 13       # Pin 13 is GPIO 27 on RPi3
