@@ -89,3 +89,9 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# feeder state file
+feeder_state.json
+
+# logs
+*.log

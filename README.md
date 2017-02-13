@@ -1,8 +1,6 @@
 # catfeeder
 
-Operates a cat feeder made with a cereal dispenser, servo and Raspberry Pi3. Food is dispensed with a pushbutton on the feeder or a webpage.
-
-It uses a python app since existing python libraries for GPIO support are pretty solid. (Sorry, Go would have been preferable but too many GPIO shenanigans).
+Operates a cat feeder made with a cereal dispenser, servo and Raspberry Pi3. Food is dispensed with a pushbutton on the feeder or a webpage. It uses a python app to control the servo since existing python libraries for GPIO support are pretty solid. (Sorry, Go would have been preferable but too many GPIO shenanigans).
 
 Parts List:
 
@@ -89,10 +87,12 @@ sudo pip install Flask
 
 ## Running the Cat Feeder
 
+You will need to tune the number of ms in `FEEDER_PORTION_TIME_MS` to reflect correct portion size for your needs.
+
 Run the app, viewable on http://catfeeder.local
 
 ```
-python catfeeder.py
+python feedcontrol.py
 ```
 
 To run on startup, copy `catfeeder` into `/etc/init.d`, then run:
