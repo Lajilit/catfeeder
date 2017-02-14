@@ -137,6 +137,7 @@ class AppState:
 # activate feeder for seconds
 def doServo(feed):
     global appState
+    global PWM
 
     # blocking call
     with lock:
@@ -163,6 +164,7 @@ def doServo(feed):
 def handleFeedData(data):
     global feedingState
     global lock
+    
     response = None
     feed = FeedInstruction()
     if feed.set(data):
@@ -251,6 +253,8 @@ def gpioInit():
 
 # setup servo
 def servoInit():
+    global PWM
+
     GPIO.setup(SERVO_PWM_PHYSICAL_PIN,
                GPIO.OUT)
     PWM = GPIO.PWM(SERVO_PWM_PHYSICAL_PIN,
