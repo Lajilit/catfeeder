@@ -137,6 +137,7 @@ class AppState:
 # activate feeder for seconds
 def doServo(feed):
     global appState
+    global feedingState
     global PWM
 
     # blocking call
@@ -160,21 +161,21 @@ def doServo(feed):
         feedingState.value = False
 
 
-# handle a valid message, lock on action
-def handleFeedData(data):
+# handle a valid feed request if not currently feeding
+def tryToFeed(data):
     global feedingState
     global lock
-    
-    response = None
+
+    if feedingState.value is True:
+        return Status('error', 'feeder is currently active').toJSON(), 409
+
     feed = FeedInstruction()
     if feed.set(data):
         doServo(feed)
-        response = Status('ok', 'feeding successful').toJSON(), 200
+        return Status('ok', 'feeding successful').toJSON(), 200
     else:
-        response = Status('error', 'invalid json schema').toJSON(), 400
         logger.error('invalid feed data: %s' % data)
-
-    return response
+        return Status('error', 'invalid json schema').toJSON(), 400
 
 
 # return json object if valid json string
@@ -188,7 +189,9 @@ def validJSONParser(buffer):
     return obj
 
 
-# HTP Handlers
+#
+# HTTP handlers
+#
 
 
 @app.route("/")
@@ -220,11 +223,15 @@ def postFeed():
     if (count > FEEDER_PORTION_COUNT_MAX):
         return Status('error', 'portionCount is too high').toJSON(), 400
     else:
-        resp, status = handleFeedData({
+        resp, status = tryToFeed({
             'count': count,
             'seconds': FEEDER_PORTION_TIME_MS / 1000
         })
         return resp, status
+
+#
+# Hardware handlers and init
+#
 
 
 # handle physical button press events
@@ -232,13 +239,15 @@ def buttonHandler():
     GPIO.setup(BUTTON_PHYSICAL_PIN,
                GPIO.IN,
                pull_up_down=GPIO.PUD_UP)
-    logger.info("Button handler loop using physical pin {0}"
-                .format(BUTTON_PHYSICAL_PIN))
+    logger.info("Button handler loop using physical pin {0}, debounce is {1}ms"
+                .format(BUTTON_PHYSICAL_PIN, BUTTON_DEBOUNCE_MS))
+
+    # input loop
     while True:
         input_state = GPIO.input(BUTTON_PHYSICAL_PIN)
         if input_state is False:
             logger.info("Button press detected")
-            handleFeedData({
+            tryToFeed({
                 'count': 1,
                 'seconds': FEEDER_PORTION_TIME_MS / 1000
             })
@@ -263,11 +272,16 @@ def servoInit():
                 .format(SERVO_PWM_PHYSICAL_PIN, SERVO_PWM_FREQUENCY))
 
 
+#
+# App init
+#
+
+
 # setup service
 def appInit():
+    global appState
     global sock
     global app
-    global appState
 
     # shared application state
     appState = AppState()
@@ -325,7 +339,7 @@ def socketListen():
                         jsonObj = validJSONParser(buffer)
                         if jsonObj is not None:
                             # attempt to feed
-                            resp, status = handleFeedData(jsonObj)
+                            resp, status = tryToFeed(jsonObj)
 
                             # respond and clear buffer
                             connection.sendall(resp)
@@ -346,10 +360,10 @@ def socketListen():
 if __name__ == "__main__":
     # logging setup
     logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger("feedcontrol")
+    logger = logging.getLogger("catfeeder")
 
     # rotating file handler which logs debug messages
-    fh = RotatingFileHandler("catfeeder_controller.log",
+    fh = RotatingFileHandler("catfeeder.log",
                              maxBytes=10000,
                              backupCount=1)
     fh.setLevel(logging.DEBUG)
