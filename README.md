@@ -92,7 +92,7 @@ You will need to tune the number of ms in `FEEDER_PORTION_TIME_MS` to reflect co
 Run the app, viewable on http://catfeeder.local
 
 ```
-python feedcontrol.py
+sudo python catfeeder.py
 ```
 
 To run on startup, copy `catfeeder` into `/etc/init.d`, then run:
