@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
 #
-# To feed, send a newline after valid json to the TCP socket:
+# This work is licensed under a Creative Commons Attribution-ShareAlike 4.0
+# International License.
+#
+# To feed using raw TCP socket instead of HTTP, uncomment socketListen()
+# and send this valid json and a newline to the socket:
 #
 # {
 #   "seconds": 0.5,
