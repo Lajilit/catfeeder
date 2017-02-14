@@ -2,7 +2,7 @@
 
 Operates a cat feeder made with a cereal dispenser, servo and Raspberry Pi3. Food is dispensed with a pushbutton on the feeder or a webpage. It uses a python app to control the servo since existing python libraries for GPIO support are pretty solid. (Sorry, Go would have been preferable but too many GPIO shenanigans).
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/L1n59lKWt_Y?ecver=1" frameborder="0" allowfullscreen></iframe>
+[![Catfeeder 1.0 Video](https://img.youtube.com/vi/L1n59lKWt_Y/0.jpg)](https://www.youtube.com/watch?v=L1n59lKWt_Y)
 
 Parts List:
 
